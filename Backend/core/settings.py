@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "pgvector.django",
+    "django_q",
     # Local apps
     "documents",
 ]
@@ -156,13 +157,26 @@ CORS_ALLOWED_ORIGINS = env.list(
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
  
 # ---------------------------------------------------------------------------
-# Celery (configured here now, activated in Phase 2 — uses local Redis,
-# free, no Docker required: Windows native Redis via WSL or Memurai free tier)
+# Hugging Face Inference Providers (free tier) — replaces OpenAI
 # ---------------------------------------------------------------------------
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = TIME_ZONE
+HF_TOKEN = env("HF_TOKEN", default="")
+ 
+# ---------------------------------------------------------------------------
+# django-q2 — async task queue, replaces Celery + Redis.
+# Uses the existing PostgreSQL database (the "orm" broker) so no
+# additional service needs to be installed or run.
+# ---------------------------------------------------------------------------
+Q_CLUSTER = {
+    "name": "rag_document_engine",
+    "workers": 2,
+    "recycle": 500,
+    "timeout": 300,       # max seconds a task may run before being killed
+    "retry": 360,         # must be > timeout
+    "queue_limit": 50,
+    "bulk": 10,
+    "orm": "default",     # use the default Django DB connection as broker
+    "catch_up": False,
+}
+ 
+
  
