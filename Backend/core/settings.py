@@ -154,8 +154,8 @@ CORS_ALLOWED_ORIGINS = env.list(
 # ---------------------------------------------------------------------------
 # OpenAI configuration (used from Phase 2 onward)
 # ---------------------------------------------------------------------------
-OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
- 
+OPENAI_API_KEY = env("OPEN_AI_KEY", default="")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 # ---------------------------------------------------------------------------
 # Hugging Face Inference Providers (free tier) — replaces OpenAI
 # ---------------------------------------------------------------------------

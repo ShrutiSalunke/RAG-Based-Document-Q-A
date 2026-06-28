@@ -2,15 +2,31 @@ from django_q.tasks import async_task
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
- 
+from drf_spectacular.utils import extend_schema
 from .models import Document
 from .serializers import DocumentSerializer
 from .tasks import ingest_document_task
+from rest_framework.parsers import MultiPartParser, FormParser
  
- 
+
+@extend_schema(
+    request={
+        "multipart/form-data": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string",
+                    "format": "binary"
+                }
+            }
+        }
+    },
+    responses=DocumentSerializer
+)
 class DocumentListCreateView(generics.ListCreateAPIView):
     serializer_class = DocumentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]  
+    parser_classes = [MultiPartParser, FormParser]  
  
     def get_queryset(self):
         return Document.objects.filter(owner=self.request.user)
@@ -28,7 +44,8 @@ class DocumentDetailView(generics.RetrieveDestroyAPIView):
  
     def get_queryset(self):
         return Document.objects.filter(owner=self.request.user) 
- 
+
+@extend_schema(responses=DocumentSerializer)
 class DocumentRetryIngestionView(APIView):   
  
     permission_classes = [permissions.IsAuthenticated]
@@ -47,7 +64,7 @@ class DocumentRetryIngestionView(APIView):
  
         return Response(DocumentSerializer(document).data, status=status.HTTP_202_ACCEPTED)
  
- 
+@extend_schema(responses=dict)
 class LLMTestView(APIView): 
  
     permission_classes = [permissions.IsAuthenticated]
@@ -60,7 +77,8 @@ class LLMTestView(APIView):
             return Response( {"detail": f"LLM call failed: {exc}"},status=status.HTTP_502_BAD_GATEWAY,)
  
         return Response({"model_response": answer}, status=status.HTTP_200_OK)
- 
+
+@extend_schema(responses=dict) 
 class HealthCheckView(APIView):   
  
     permission_classes = [permissions.AllowAny]
